@@ -1,0 +1,21 @@
+spring.local.active: local
+#-------------
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: local
+
+  mongodb:
+    embedded:
+      features: sync_delay,no_http_interface_arg,only_with_ssl
+      version: 4.0.21
+
+# ----------
+logging:
+  level:
+    root: debug
