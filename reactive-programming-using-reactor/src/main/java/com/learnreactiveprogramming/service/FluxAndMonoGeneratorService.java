@@ -103,11 +103,24 @@ public class FluxAndMonoGeneratorService {
         Mono<String> monob = Mono.just("D");
         return monoa.zipWith(monob).map(t1-> t1.getT1() + t1.getT2()); // AD, BE, CF
     }
+
     public Flux<String> nameFlux_flatmap_async() {
         return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
                 .filter(s -> s.length() > 3)
                 .flatMap(this::splitStringWithDelay)
                 .map(String::toUpperCase).log();
+    }
+
+    public Flux<String> nameFlux_flatmap() {
+        return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
+                .filter(s -> s.length() > 3)
+                .flatMap(this::splitString)
+                .map(String::toUpperCase).log();
+    }
+
+    //ALEX -> Flux(A,L,E,X)
+    public Flux<String> splitString(String name) {
+        return Flux.fromArray(name.split(""));
     }
 
     public Flux<String> splitStringWithDelay(String name) {

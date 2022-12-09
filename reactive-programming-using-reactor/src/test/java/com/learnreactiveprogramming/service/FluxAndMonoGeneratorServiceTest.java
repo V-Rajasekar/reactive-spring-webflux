@@ -34,6 +34,13 @@ class FluxAndMonoGeneratorServiceTest {
     }
 
     @Test
+    void nameFlux_flatmap() {
+        StepVerifier.create(fluxAndMonoGeneratorService.nameFlux_flatmap())
+                .expectNextCount(11)
+                .verifyComplete();
+    }
+
+    @Test
     void nameFlux_flatmap_async() {
         StepVerifier.create(fluxAndMonoGeneratorService.nameFlux_flatmap_async())
                 .expectNextCount(11)
