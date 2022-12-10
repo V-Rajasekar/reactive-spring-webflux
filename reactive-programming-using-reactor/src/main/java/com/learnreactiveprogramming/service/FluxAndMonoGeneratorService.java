@@ -10,17 +10,19 @@ import reactor.core.publisher.Mono;
 
 public class FluxAndMonoGeneratorService {
 
+    //Creating Flux with fromIterable
     public Flux<String> nameFlux() {
         return Flux.fromIterable(List.of("Alex", "Ben", "Charlie")).log();
     }
 
+    //Flux with Map and filter
     public Flux<String> nameFlux_map() {
         return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
                 .filter(s -> s.length() > 3)
                 .map(String::toUpperCase).log();
     }
 
-
+   //transform from one type to another type using the functional interface
     public Flux<String> nameFlux_transform() {
         //Creating a function functional interface
         Function<Flux<String>, Flux<String>> fluxFunction = name -> name.filter(s -> s.length() > 3)
@@ -101,7 +103,7 @@ public class FluxAndMonoGeneratorService {
     public Mono<String> explore_zipWith_mono() {
         Mono<String> monoa = Mono.just("A");
         Mono<String> monob = Mono.just("D");
-        return monoa.zipWith(monob).map(t1-> t1.getT1() + t1.getT2()); // AD, BE, CF
+        return monoa.zipWith(monob).map(t1-> t1.getT1() + t1.getT2()); // AD
     }
 
     public Flux<String> nameFlux_flatmap_async() {

@@ -1,3 +1,5 @@
+# Reactive Programming
+
 What is Reactive programming? 
 - Reactive programming is a new programming paradigm. 
 - Asyn and non blocking
@@ -146,10 +148,14 @@ Flux nameFlux = Flux.fromIterable("Alex", "Ben", "Charlie");
 ## Transform data
 - `map()`: tranform from one form to another form  1-1 (T to V)
 - `flatMap`: tranform 1-N (T to *),  Async in nature so (order is not preserved). Useful to flatten the obj that contains another Mono/Flux
-- `concatMap` (order is preserved with a tradeoff of on time).
-- flatMapSequential(order is preserved with no compramise).
+- `concatMap`: Work Similar to flatMap. ConcatMap operator preserves the ordering sequence of the reactor streams. By 
+  take more time compared to the flatMap
+- `flatMapSequential`. Fill fulls the drawbacks of flatMap and concatMap (i.e) (order is preserved with no execution 
+  time lag).
 
-### flatMap() in Mono
+> When you have a need to transform Mono to Mono then use flatMap, If Mono to Flux then use flatMapMany
+
+### flatMap() in Mono to mono transformation
 - Use it when the transformation returns a mono (e.g)
 - Returns a `Mono<T>`
 - Use flatMap if the transformation involves making a REST API call or any kind.
@@ -167,7 +173,7 @@ Flux nameFlux = Flux.fromIterable("Alex", "Ben", "Charlie");
     return Mono.just(List.of(charArray));
    }
   ```  
-### flatMapMany() in Mono
+### flatMapMany() in Mono (Mono to Many transformation)
     - **When Mono transformation returns a Flux type then use flatMapMany()**
   ```java
     public Flux<String> nameMono_flatMapMany(String name) {
@@ -187,24 +193,44 @@ Flux nameFlux = Flux.fromIterable("Alex", "Ben", "Charlie");
 ### transform()
 - Nothing fancy here moving the common functionality to a Functional interface and used it across the project
 - Used to transform from one type to another type.
-- Accept Function Functional interface
-- Input publisher - (Mono or Flux)
-- Output publisher - (Mono or Flux)
-  ```java
-   public Flux<String> nameFlux_transform() {
+- Accept **Function Functional interface**
+  - Function Functional interface got released as part of Java 8
+  - Input publisher - (Mono or Flux)
+  - Output publisher - (Mono or Flux)
+  
+You extract the common functionality and assign it to a Function variable like the below one and use transform
+with the function variable. 
+
+    ```java
+        public Flux<String> nameFlux_transform() {
         //Creating a function functional interface
-        Function<Flux<String>, Flux<String>> fluxFunction = name -> name.filter(s -> s.length() > 3)
-                .map(String::toUpperCase);
+          Function<Flux<String>, Flux<String>> fluxFunction = name -> name.filter(s -> s.length() > 3)
+                  .map(String::toUpperCase);
         
-        return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
-                .transform(fluxFunction)
-               .log();
-    }
-  ```
+          return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
+                  .transform(fluxFunction)
+                 .log();
+      }
+    ```
+     
 ### defaultIfEmpty() or switchIfEmpty()
 - It is not mandatory for a datasource to emit data all the time
 - Use defaultIfEmpty() or switchIfEmpty() when no data emit
-  ```java
+
+#### defaultIfEmpty()
+- Returning the raw type like <String>
+```java   
+ 
+         Flux<String> fluxNames = Flux.fromIterable(List.of("Alex", "Ben", "Chole"))
+                .filter(s -> s.length() > 6)
+                .map(String::toUpperCase)
+                .defaultIfEmpty("default") 
+                .log(); 
+      //Output default removing defaultIfEmpty will throw error          
+```
+#### switchIfEmpty()
+- Returning the Flux 
+```java   
    //Creating a function functional interface
         Function<Flux<String>, Flux<String>> fluxFunction = name -> name.filter(s -> s.length() > length)
                 .map(String::toUpperCase);
@@ -213,22 +239,20 @@ Flux nameFlux = Flux.fromIterable("Alex", "Ben", "Charlie");
 
         return Flux.fromIterable(List.of("Alex", "Ben", "Charlie"))
                 .transform(fluxFunction)
-            //    .default("default") // without passing function interface(FluxFunction)
                 .switchIfEmpty(defaultFlux)
-                .log();
-  ```
-
-
+                .log(); 
+```
 ## Introduction to combining reactive stream
 `Combining Flux & Mono`
+
 ### **concat() and concatWith()**
 - Used to combine two reactive stream in to one.
 - Concatenation of Reactive Streams happens in a sequence
     - First one is subscribed first and completes
     - Second one is subscribed after that and then completes
-- **concat()** - static method only in Flux
-- **concatWith()** - Instance method in Flux and Mono
-- incase of mono it returns the flux
+- **Flux.concat(flux1, flux2)** - static method and available (only) in Flux
+- **flux1.concatWith(flux2)** - Instance method in Flux and Mono
+- concatWith in mono returns the flux
 - Both of these operators works similarly.
 
 ```java
@@ -241,29 +265,52 @@ flux1.concatWith(flux2); //Using the instance method
 var mono1 = Mono.just("A")
 var mono2 = Mono.just("D");
 //Returns A, B, C, D, E
-var resultFlux = mono1.concatWith(mono2);
-//Returns Flux.
-
+//Returns Flux.       
+Flux<String> alphas = mono1.concatWith(mono2);
 ```
 
 ### merge() & mergeWith()
 - Used to combine two publisher(Mono, Flux) together
-- Unlike concat(sequentially) merge happens in interleaved fashion, both the publisher and subscribed
-  eagerly.
+  - _Flux.merge(Flux1, Flux2)_ is  a static method in Flux
+  - _mono1.mergeWith(mono2)_ is an instance method in Flux and Mono
+>Difference between concat and merge. Unlike concat(sequentially) merge happens in interleaved fashion, both the 
+> publisher and subscribed eagerly whereas concat() subscribes to the publishers in a sequence.
 
-
+### mergeSequential()
+- Used to combine two publisher(Mono, Flux) together
+- Static method in Flux Flux.mergeSequential(flux1, flux2)
+- Even though the publishers and subscribed eagerly the merge happens in a sequence.
 
 ### zip() and zipWith()
-- zip()
-    - Static method that's part of the Flux
+- Zip `Flux.zip():Flux`
+    - Is a static method in Flux
     - Can be used to merge up-to 2 to 8 Publishers(Flux or Mono) in to one
-- zipWith()
+
+- ZipWith `mono1.zipWith(mono2):Mono`
     - This is an instance method that's part of the Flux and Mono
-    - Used to merge two Publishers in to one.
+    - Used to merge two Publishers(_mono/flux_) in to one.
 - Publishers are subscribed eagerly
 - Waits for all the publishers involved in the transformation to emit one element.
     - Continues until one publisher sends an OnComplete event.
 
+ ##Zip and ZipWith sample
+```java
+
+  Flux<String> fluxa = Flux.just("A", "B", "C");
+  Flux<String> fluxb = Flux.just("D", "E", "F");
+  return Flux.zip(fluxa, fluxb, (first, second) -> first + second); // AD, BE, CF
+
+// Zips three publishers together in this example.
+  Flux<String> fluxa = Flux.just("A", "B", "C");
+  Flux<String> fluxb = Flux.just("D", "E", "F");
+  Flux<String> fluxn = Flux.just("1", "2", "3");
+  return Flux.zip(fluxa, fluxb, fluxn).map(t4 -> t4.getT1() + t4.getT2() + t4.getT3()); // AD1, BE2, CF3
+// Zip Mono returns Mono
+  Mono<String> monoa = Mono.just("A");
+  Mono<String> monob = Mono.just("D");
+  return monoa.zipWith(monob).map(t1-> t1.getT1() + t1.getT2()); // AD
+```
+>Note: ZipWith on Mono returns Mono unlike other operators like concatWith and MergeWith which returns Flux 
 
 # Spring WebFlux
 - [Home Spring Reactive](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html)
